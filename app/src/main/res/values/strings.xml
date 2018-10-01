@@ -1,11 +1,10 @@
 <resources>
-    <string name="app_name">Group-28</string>
+    <string name="app_name">Learn2Sign</string>
     <string name="choose_a_word">Choose A Word</string>
     <string name="server_ip_address">Choose Server Ip Address</string>
 
     <string-array name="server_ips">
         <item>10.211.17.171</item>
-        <item>192.168.0.7</item>
     </string-array>
     <string-array name="spinner_words">
         <item>About</item>

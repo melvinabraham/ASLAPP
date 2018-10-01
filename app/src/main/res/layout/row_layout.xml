@@ -8,7 +8,7 @@
         android:id="@+id/vv_video"
         android:layout_width="wrap_content"
         android:layout_gravity="center"
-        android:layout_margin="30dp"
+        android:layout_margin="20dp"
         android:layout_height="300dp" />
 
     <LinearLayout
@@ -21,8 +21,9 @@
             android:id="@+id/tv_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="20dp"
+            android:textSize="12sp"
             android:layout_gravity="center"
+            android:layout_weight="10"
             android:hint="Title"/>
 
         <CheckBox
@@ -31,6 +32,7 @@
             android:layout_gravity="center|end"
             android:layout_marginLeft="5dp"
             android:layout_marginRight="8dp"
+            android:layout_weight="1"
             android:layout_height="100dp"/>
 
     </LinearLayout>

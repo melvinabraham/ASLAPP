@@ -3,6 +3,7 @@ package com.example.amine.learn2sign;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Environment;
@@ -51,14 +52,17 @@ public class UploadActivity extends AppCompatActivity {
     @BindView(R.id.pb_progress)
     ProgressBar progressBar;
     UploadListAdapter uploadListAdapter;
+    UploadActivity uploadActivity;
+    SharedPreferences sharedPreferences;
+    static int upload_number = 0;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_upload);
         ButterKnife.bind(this);
-
+        uploadActivity = this;
         rv_videos.setLayoutManager(new LinearLayoutManager(this,LinearLayoutManager.VERTICAL,false));
-
+        sharedPreferences =  this.getSharedPreferences(getPackageName(), Context.MODE_PRIVATE);
 
         File m = new File(Environment.getExternalStorageDirectory().getPath() + "/Learn2Sign");
         if(m.exists()) {
@@ -87,8 +91,8 @@ public class UploadActivity extends AppCompatActivity {
         switch (item.getItemId()) {
             case R.id.menu_upload:
                 //upload to Server now
-                File[] toUpload = uploadListAdapter.getVideos();
-                boolean[] checked = uploadListAdapter.getChecked();
+                final File[] toUpload = uploadListAdapter.getVideos();
+                final boolean[] checked = uploadListAdapter.getChecked();
                 String server_ip = getSharedPreferences(this.getPackageName(), Context.MODE_PRIVATE).getString(INTENT_SERVER_ADDRESS,"10.211.17.171");
                 Log.d("msg",server_ip);
                 for(int i=0;i<checked.length;i++) {
@@ -107,17 +111,25 @@ public class UploadActivity extends AppCompatActivity {
 
                         // send request
                         AsyncHttpClient client = new AsyncHttpClient();
-
-                        client.post("http://"+server_ip +"/upload_video.php", params, new AsyncHttpResponseHandler() {
+                    final int finalI = i;
+                    client.post("http://"+server_ip +"/upload_video.php", params, new AsyncHttpResponseHandler() {
                             @Override
                             public void onSuccess(int statusCode, Header[] headers, byte[] bytes) {
                                 // handle success response
                                 Log.e("msg success",statusCode+"");
-                                if(statusCode==200)
+                                if(statusCode==200) {
                                     Toast.makeText(UploadActivity.this, "Success", Toast.LENGTH_SHORT).show();
-                                else
-                                    Toast.makeText(UploadActivity.this, "Failed", Toast.LENGTH_SHORT).show();
+                                    toUpload[finalI].delete();
+                                    uploadListAdapter.getVideos()[finalI] = null;
+                                    uploadListAdapter.notifyDataSetChanged();
 
+                                    if(checked[finalI]) //video accepted
+                                        sharedPreferences.edit().putInt("Number_Accepted",1+sharedPreferences.getInt("Number_Accepted",0)).apply();
+
+                                }
+                                else {
+                                    Toast.makeText(UploadActivity.this, "Failed", Toast.LENGTH_SHORT).show();
+                                }
                             }
 
                             @Override
@@ -128,7 +140,6 @@ public class UploadActivity extends AppCompatActivity {
                                 Toast.makeText(UploadActivity.this, "Something Went Wrong", Toast.LENGTH_SHORT).show();
 
                             }
-
                             @Override
                             public void onProgress(long bytesWritten, long totalSize) {
                                 tv_filename.setText(bytesWritten + " out of " + totalSize);
@@ -146,7 +157,11 @@ public class UploadActivity extends AppCompatActivity {
 
                             @Override
                             public void onFinish() {
-
+                                Log.e("msg on finish", upload_number+"");
+                                upload_number = upload_number + 1;
+                                if(upload_number == checked.length) {
+                                    upload_log_file();
+                                }
                                 tv_filename.setVisibility(View.GONE);
                                 progressBar.setVisibility(View.GONE);
                                 super.onFinish();
@@ -158,41 +173,48 @@ public class UploadActivity extends AppCompatActivity {
                         uploadFile.execute(uploadListAdapter.getVideos()[i].getPath());*/
 
                 }
-                Toast.makeText(this,"Upload to Server", Toast.LENGTH_LONG).show();
-
-
-                File n = new File(getFilesDir().getPath());
-                File f = new File(n.getParent()+"/shared_prefs/" + getPackageName() +".xml");
-                AsyncHttpClient client_logs = new AsyncHttpClient();
-                RequestParams params = new RequestParams();
-                try {
-                    params.put("uploaded_file",f);
-                    params.put("id",id);
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                }
-                client_logs.post("http://"+server_ip+"/upload_log_file.php", params, new AsyncHttpResponseHandler() {
-
-                    @Override
-                    public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
-                        if(statusCode==200)
-                            Toast.makeText(UploadActivity.this, "Done", Toast.LENGTH_SHORT).show();
-                        else
-                            Toast.makeText(UploadActivity.this, "Log File could not be uploaded", Toast.LENGTH_SHORT).show();
-                    }
-
-                    @Override
-                    public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
-                        Toast.makeText(UploadActivity.this, "Log File could not be uploaded", Toast.LENGTH_SHORT).show();
-
-                    }
-                });
-
 
 
             default:
                 return super.onOptionsItemSelected(item);
         }
+
+    }
+    public void upload_log_file() {
+        upload_number = 0;
+        Toast.makeText(this,"Upload to Server", Toast.LENGTH_LONG).show();
+        String id = getSharedPreferences(getPackageName(), Context.MODE_PRIVATE).getString(INTENT_ID,"00000000");
+
+        String server_ip = getSharedPreferences(this.getPackageName(), Context.MODE_PRIVATE).getString(INTENT_SERVER_ADDRESS,"10.211.17.171");
+
+        File n = new File(getFilesDir().getPath());
+        File f = new File(n.getParent()+"/shared_prefs/" + getPackageName() +".xml");
+        AsyncHttpClient client_logs = new AsyncHttpClient();
+        RequestParams params = new RequestParams();
+        try {
+            params.put("uploaded_file",f);
+            params.put("id",id);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        client_logs.post("http://"+server_ip+"/upload_log_file.php", params, new AsyncHttpResponseHandler() {
+
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                if(statusCode==200)
+                    Toast.makeText(UploadActivity.this, "Done", Toast.LENGTH_SHORT).show();
+                else
+                    Toast.makeText(UploadActivity.this, "Log File could not be uploaded", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                Toast.makeText(UploadActivity.this, "Log File could not be uploaded", Toast.LENGTH_SHORT).show();
+
+            }
+        });
+
+
     }
 }
 

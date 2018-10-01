@@ -20,6 +20,9 @@ import android.widget.VideoView;
 import org.w3c.dom.Text;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import butterknife.ButterKnife;
 
@@ -48,7 +51,7 @@ public class UploadListAdapter extends RecyclerView.Adapter<UploadListAdapter.Vi
     }
 
     @Override
-    public void onBindViewHolder(@NonNull UploadListAdapter.ViewHolder viewHolder,int i) {
+    public void onBindViewHolder(@NonNull UploadListAdapter.ViewHolder viewHolder, int i) {
 
         if(videos[i]!=null) {
 
@@ -72,6 +75,10 @@ public class UploadListAdapter extends RecyclerView.Adapter<UploadListAdapter.Vi
 
             }
 
+        } else {
+            viewHolder.vv_video.setVisibility(View.GONE);
+            viewHolder.cb_check.setVisibility(View.GONE);
+            viewHolder.tv_title.setVisibility(View.GONE);
         }
 
 
@@ -105,7 +112,15 @@ public class UploadListAdapter extends RecyclerView.Adapter<UploadListAdapter.Vi
             vv_video.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
                 @Override
                 public void onCompletion(MediaPlayer mediaPlayer) {
-                    vv_video.start();
+                   if(videos[position]==null)
+                   {
+                       vv_video.setVisibility(View.GONE);
+                       cb_check.setVisibility(View.GONE);
+                       tv_title.setVisibility(View.GONE);
+                   } else {
+
+                       vv_video.start();
+                   }
                 }
             });
             vv_video.setOnClickListener(new View.OnClickListener() {
@@ -124,4 +139,5 @@ public class UploadListAdapter extends RecyclerView.Adapter<UploadListAdapter.Vi
     public File[] getVideos() {
         return videos;
     }
+
 }

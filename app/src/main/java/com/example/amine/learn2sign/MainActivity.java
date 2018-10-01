@@ -1,8 +1,10 @@
 package com.example.amine.learn2sign;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -13,6 +15,7 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -37,6 +40,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashSet;
+import java.util.Set;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -48,6 +53,8 @@ import static android.provider.MediaStore.EXTRA_MEDIA_TITLE;
 import static com.example.amine.learn2sign.LoginActivity.INTENT_EMAIL;
 import static com.example.amine.learn2sign.LoginActivity.INTENT_ID;
 import static com.example.amine.learn2sign.LoginActivity.INTENT_SERVER_ADDRESS;
+import static com.example.amine.learn2sign.LoginActivity.INTENT_TIME_WATCHED;
+import static com.example.amine.learn2sign.LoginActivity.INTENT_TIME_WATCHED_VIDEO;
 import static com.example.amine.learn2sign.LoginActivity.INTENT_URI;
 import static com.example.amine.learn2sign.LoginActivity.INTENT_WORD;
 
@@ -93,6 +100,10 @@ public class MainActivity extends AppCompatActivity {
     String returnedURI;
     String old_text = "";
     SharedPreferences sharedPreferences;
+    long time_started = 0;
+    long time_started_return = 0;
+    Activity mainActivity;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -102,10 +113,6 @@ public class MainActivity extends AppCompatActivity {
         //bind xml to activity
         ButterKnife.bind(this);
         Stetho.initializeWithDefaults(this);
-
-
-
-
 
         rb_learn.setChecked(true);
         bt_cancel.setVisibility(View.GONE);
@@ -117,6 +124,8 @@ public class MainActivity extends AppCompatActivity {
                 if(checkedId==rb_learn.getId()) {
                     Toast.makeText(getApplicationContext(),"Learn",Toast.LENGTH_SHORT).show();
                     vv_video_learn.setVisibility(View.VISIBLE);
+                    vv_video_learn.start();
+                    time_started = System.currentTimeMillis();
                 } else if ( checkedId==rb_practice.getId()) {
                     Toast.makeText(getApplicationContext(),"Practice",Toast.LENGTH_SHORT).show();
                     vv_video_learn.setVisibility(View.GONE);
@@ -130,6 +139,7 @@ public class MainActivity extends AppCompatActivity {
                 String text = sp_words.getSelectedItem().toString();
                 if(!old_text.equals(text)) {
                     path = "";
+                    time_started = System.currentTimeMillis();
                     play_video(text);
                 }
             }
@@ -154,7 +164,11 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onCompletion(MediaPlayer mediaPlayer) {
                 if(mediaPlayer!=null)
+                {
                     mediaPlayer.start();
+
+                }
+
              }
         };
         vv_record.setOnCompletionListener(onCompletionListener);
@@ -168,9 +182,12 @@ public class MainActivity extends AppCompatActivity {
         vv_video_learn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                vv_video_learn.start();
+                if(!vv_video_learn.isPlaying()) {
+                    vv_video_learn.start();
+                }
             }
         });
+        time_started = System.currentTimeMillis();
         sharedPreferences =  this.getSharedPreferences(getPackageName(), Context.MODE_PRIVATE);
         Intent intent = getIntent();
         if(intent.hasExtra(INTENT_EMAIL) && intent.hasExtra(INTENT_ID)) {
@@ -180,6 +197,22 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this,"Already Logged In",Toast.LENGTH_SHORT).show();
 
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+        moveTaskToBack(true);
+        finish();
+        super.onBackPressed();
+    }
+
+    @Override
+    protected void onResume() {
+
+        vv_video_learn.start();
+        time_started = System.currentTimeMillis();
+        super.onResume();
+
     }
 
     public void play_video(String text) {
@@ -300,11 +333,16 @@ public class MainActivity extends AppCompatActivity {
         } else {
             // Permission has already been granted
              File f = new File(Environment.getExternalStorageDirectory(), "Learn2Sign");
+
              if (!f.exists()) {
                  f.mkdirs();
              }
+
+             time_started = System.currentTimeMillis() - time_started;
+
              Intent t = new Intent(this,VideoActivity.class);
              t.putExtra(INTENT_WORD,sp_words.getSelectedItem().toString());
+             t.putExtra(INTENT_TIME_WATCHED, time_started);
              startActivityForResult(t,9999);
 
 
@@ -331,7 +369,7 @@ public class MainActivity extends AppCompatActivity {
     public void sendToServer() {
         Toast.makeText(this,"Send to Server",Toast.LENGTH_SHORT).show();
         Intent t = new Intent(this,UploadActivity.class);
-        startActivity(t);
+        startActivityForResult(t,2000);
     }
 
     @OnClick(R.id.bt_cancel)
@@ -347,7 +385,9 @@ public class MainActivity extends AppCompatActivity {
         sp_words.setEnabled(true);
 
         rb_learn.setEnabled(true);
-        rb_practice.setEnabled(true);
+        //rb_practice.setEnabled(true);
+        time_started = System.currentTimeMillis();
+
 
     }
 
@@ -356,9 +396,24 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
 
     Log.e("OnActivityresult",requestCode+" "+resultCode);
+        if(requestCode==2000 ) {
+            //from video activity
+            vv_record.setVisibility(View.GONE);
+            rb_learn.setChecked(true);
+            bt_cancel.setVisibility(View.GONE);
+            bt_send.setVisibility(View.GONE);
+            bt_record.setVisibility(View.VISIBLE);
+            sp_words.setEnabled(true);
+            rb_learn.setEnabled(true);
+            //rb_practice.setEnabled(true);
+            sp_ip_address.setEnabled(true);
+
+
+        }
         if(requestCode==9999 && resultCode == 8888) {
-            if(intent.hasExtra(INTENT_URI)) {
+            if(intent.hasExtra(INTENT_URI) && intent.hasExtra(INTENT_TIME_WATCHED_VIDEO)) {
                 returnedURI = intent.getStringExtra(INTENT_URI);
+                time_started_return = intent.getLongExtra(INTENT_TIME_WATCHED_VIDEO,0);
 
                 vv_record.setVisibility(View.VISIBLE);
                 bt_record.setVisibility(View.GONE);
@@ -366,10 +421,17 @@ public class MainActivity extends AppCompatActivity {
                 bt_cancel.setVisibility(View.VISIBLE);
                 sp_words.setEnabled(false);
                 rb_learn.setEnabled(false);
-                rb_practice.setEnabled(false);
+                //rb_practice.setEnabled(false);
                 vv_record.setVideoURI(Uri.parse(returnedURI));
-                sharedPreferences.edit().putInt("recorded_"+sp_words.getSelectedItem().toString(), sharedPreferences.getInt("recorded_"+sp_words.getSelectedItem().toString(),0)+1).apply();
+                int try_number = sharedPreferences.getInt("record_"+sp_words.getSelectedItem().toString(),0);
+                try_number++;
+                String toAdd  = sp_words.getSelectedItem().toString()+"_"+try_number+"_"+time_started_return + "";
+                HashSet<String> set = (HashSet<String>) sharedPreferences.getStringSet("RECORDED",new HashSet<String>());
+                set.add(toAdd);
+                sharedPreferences.edit().putStringSet("RECORDED",set).apply();
+                sharedPreferences.edit().putInt("record_"+sp_words.getSelectedItem().toString(), try_number).apply();
 
+                vv_video_learn.start();
             }
 
         }
@@ -378,12 +440,24 @@ public class MainActivity extends AppCompatActivity {
         {
             if(intent!=null) {
                 //create folder
-                if (intent.hasExtra(INTENT_URI)) {
+                if(intent.hasExtra(INTENT_URI) && intent.hasExtra(INTENT_TIME_WATCHED_VIDEO)) {
                     returnedURI = intent.getStringExtra(INTENT_URI);
+                    time_started_return = intent.getLongExtra(INTENT_TIME_WATCHED_VIDEO,0);
                     File f = new File(returnedURI);
                     f.delete();
-                    sharedPreferences.edit().putInt("canceled_"+sp_words.getSelectedItem().toString(), sharedPreferences.getInt("canceled_"+sp_words.getSelectedItem().toString(),0)+1).apply();
+                  //  int try_number = sharedPreferences.getInt("record_"+sp_words.getSelectedItem().toString(),0);
+                   // try_number++;
+                    //String toAdd  = sp_words.getSelectedItem().toString()+"_"+try_number+"_"+time_started_return + "_cancelled";
+                    //HashSet<String> set = (HashSet<String>) sharedPreferences.getStringSet("RECORDED",new HashSet<String>());
+                   // set.add(toAdd);
+                  //  sharedPreferences.edit().putStringSet("RECORDED",set).apply();
+                 //   sharedPreferences.edit().putInt("record_"+sp_words.getSelectedItem().toString(), try_number).apply();
 
+
+
+
+                    time_started = System.currentTimeMillis();
+                    vv_video_learn.start();
                 }
             }
 
@@ -430,16 +504,43 @@ public class MainActivity extends AppCompatActivity {
         //respond to menu item selection
         switch (item.getItemId()) {
             case R.id.menu_logout:
-                if(sharedPreferences.edit().remove(INTENT_ID).commit() && sharedPreferences.edit().remove(INTENT_EMAIL).commit()) {
-                    sharedPreferences.edit().putInt(getString(R.string.logout), sharedPreferences.getInt(getString(R.string.logout),0)+1).apply();
-                    startActivity(new Intent(this, LoginActivity.class));
-                    this.finish();
+                mainActivity = this;
+                    final AlertDialog alertDialog = new AlertDialog.Builder(this).create();
+                    alertDialog.setTitle("ALERT");
+                    alertDialog.setMessage("Logging out will delete all the data!");
+                    alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "OK",
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                    sharedPreferences.edit().clear().apply();
+                                    File f = new File(Environment.getExternalStorageDirectory(), "Learn2Sign");
+                                    if (f.isDirectory())
+                                    {
+                                        String[] children = f.list();
+                                        for (int i = 0; i < children.length; i++)
+                                        {
+                                            new File(f, children[i]).delete();
+                                        }
+                                    }
+                                    startActivity(new Intent(mainActivity,LoginActivity.class));
+                                    mainActivity.finish();
+
+                                }
+                            });
+                    alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "CANCEL", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            dialogInterface.dismiss();
+                        }
+                    });
+                    alertDialog.show();
+
+
+
                     return true;
-                }
             case R.id.menu_upload_server:
                 sharedPreferences.edit().putInt(getString(R.string.gotoupload), sharedPreferences.getInt(getString(R.string.gotoupload),0)+1).apply();
                 Intent t = new Intent(this,UploadActivity.class);
-                startActivity(t);
+                startActivityForResult(t,2000);
 
             default:
                 return super.onOptionsItemSelected(item);
