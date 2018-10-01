@@ -503,6 +503,10 @@ public class MainActivity extends AppCompatActivity {
 
         //respond to menu item selection
         switch (item.getItemId()) {
+            case R.id.menu_practice_module:
+                Intent practiceIntent = new Intent(this,PracticeActivity.class);
+                startActivity(practiceIntent);
+
             case R.id.menu_logout:
                 mainActivity = this;
                     final AlertDialog alertDialog = new AlertDialog.Builder(this).create();

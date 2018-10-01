@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-<item android:title="Logout"
+    <item android:title="Practice"
+        android:id="@+id/menu_practice_module"></item>
+
+    <item android:title="Logout"
     android:id="@+id/menu_logout"></item>
 
     <item android:title="GoTo Upload"
