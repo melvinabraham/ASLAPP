@@ -71,6 +71,7 @@ public class RateActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_rate);
         VideoView video_view = (VideoView) findViewById(R.id.r_video_learn);
+        VideoView video_record_view = (VideoView) findViewById(R.id.r_record);
         if(getIntent().hasExtra(INTENT_WORD)) {
             practice_word = getIntent().getStringExtra(INTENT_WORD);
         }
@@ -80,6 +81,7 @@ public class RateActivity extends AppCompatActivity {
 
 
         play_video(practice_word);
+        play_record_video(videoFilePath);
         MediaPlayer.OnCompletionListener onCompletionListener = new MediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(MediaPlayer mediaPlayer) {
@@ -93,6 +95,7 @@ public class RateActivity extends AppCompatActivity {
         };
 
         video_view.setOnCompletionListener(onCompletionListener);
+        video_record_view.setOnCompletionListener(onCompletionListener);
 
         Button accept = (Button)findViewById(R.id.Accept_word);
         accept.setOnClickListener(new View.OnClickListener() {
@@ -115,6 +118,16 @@ public class RateActivity extends AppCompatActivity {
         });
     }
 
+    public void play_record_video(String path) {
+        if(!path.isEmpty()) {
+
+            Uri uri = Uri.parse(path);
+            VideoView video_view = (VideoView) findViewById(R.id.r_record);
+            video_view.setVideoURI(uri);
+            video_view.start();
+
+        }
+    }
 
 
     public void play_video(String text) {
