@@ -62,7 +62,8 @@ import static com.example.amine.learn2sign.LoginActivity.INTENT_WORD;
 
 public class RateActivity extends AppCompatActivity {
 
-
+    String practice_word;
+    String videoFilePath;
 
 
     @Override
@@ -70,9 +71,15 @@ public class RateActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_rate);
         VideoView video_view = (VideoView) findViewById(R.id.r_video_learn);
+        if(getIntent().hasExtra(INTENT_WORD)) {
+            practice_word = getIntent().getStringExtra(INTENT_WORD);
+        }
+        if(getIntent().hasExtra(INTENT_URI)) {
+            videoFilePath = getIntent().getStringExtra(INTENT_URI);
+        }
 
 
-        play_video("Can");
+        play_video(practice_word);
         MediaPlayer.OnCompletionListener onCompletionListener = new MediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(MediaPlayer mediaPlayer) {
