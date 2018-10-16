@@ -1,8 +1,10 @@
 package com.example.amine.learn2sign;
 
+import android.content.Intent;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -17,6 +19,9 @@ import java.util.Random;
 import com.example.amine.learn2sign.MainActivity;
 
 import butterknife.BindView;
+
+import static com.example.amine.learn2sign.LoginActivity.INTENT_TIME_WATCHED;
+import static com.example.amine.learn2sign.LoginActivity.INTENT_WORD;
 
 public class PracticeActivity extends AppCompatActivity {
 
@@ -49,7 +54,18 @@ public class PracticeActivity extends AppCompatActivity {
 
         //practice_video_learn = (VideoView)findViewById(R.id.practice_video_learn);
 
+        Button mButtonRecord = (Button)findViewById(R.id.practice_record);
+        mButtonRecord.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.e("onClick - Record Button", "Starting the Record Video Activity");
+                Intent intent = new Intent(PracticeActivity.this, VideoActivity.class);
+                intent.putExtra(INTENT_WORD, "Hello from Practice");
+                intent.putExtra(INTENT_TIME_WATCHED, System.currentTimeMillis());
+                startActivityForResult(intent, 5555);
 
+            }
+        });
 
         Button newword = (Button)findViewById(R.id.practice_new_word);
         newword.setOnClickListener(new View.OnClickListener() {
@@ -162,4 +178,11 @@ public class PracticeActivity extends AppCompatActivity {
 
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        Log.e("OnActivityresult",requestCode+" "+resultCode);
+        if(requestCode == 5555){
+            Log.println(Log.INFO, "Intent", "Intent");
+        }
+    }
 }
