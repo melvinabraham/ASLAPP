@@ -21,6 +21,7 @@ import com.example.amine.learn2sign.MainActivity;
 import butterknife.BindView;
 
 import static com.example.amine.learn2sign.LoginActivity.INTENT_TIME_WATCHED;
+import static com.example.amine.learn2sign.LoginActivity.INTENT_URI;
 import static com.example.amine.learn2sign.LoginActivity.INTENT_WORD;
 
 public class PracticeActivity extends AppCompatActivity {
@@ -41,6 +42,7 @@ public class PracticeActivity extends AppCompatActivity {
     Button practice_new_word;
 
     String[] array;
+    String videoFileName;
 
 
     @Override
@@ -50,7 +52,6 @@ public class PracticeActivity extends AppCompatActivity {
 
         //
         array = getResources().getStringArray(R.array.spinner_words);
-
 
         //practice_video_learn = (VideoView)findViewById(R.id.practice_video_learn);
 
@@ -179,10 +180,17 @@ public class PracticeActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+    protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
         Log.e("OnActivityresult",requestCode+" "+resultCode);
-        if(requestCode == 5555){
-            Log.println(Log.INFO, "Intent", "Intent");
+        if(requestCode == 5555 && resultCode == 8888){
+            if(intent.hasExtra(INTENT_URI)) {
+                TextView textview = (TextView) findViewById(R.id.practice_words);
+                videoFileName = intent.getStringExtra(INTENT_URI);
+                Intent t = new Intent(this, RateActivity.class);
+                t.putExtra(INTENT_WORD, textview.getText());
+                t.putExtra(INTENT_URI, videoFileName);
+                startActivityForResult(t, 5555);
+            }
         }
     }
 }
