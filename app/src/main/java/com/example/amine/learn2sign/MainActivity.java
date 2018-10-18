@@ -33,6 +33,9 @@ import android.widget.Toast;
 import android.widget.VideoView;
 
 import com.facebook.stetho.Stetho;
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.AsyncHttpResponseHandler;
+import com.loopj.android.http.RequestParams;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -40,6 +43,9 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -47,6 +53,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import butterknife.internal.Utils;
+import cz.msebera.android.httpclient.Header;
 
 import static android.provider.MediaStore.EXTRA_DURATION_LIMIT;
 import static android.provider.MediaStore.EXTRA_MEDIA_TITLE;
@@ -96,6 +103,8 @@ public class MainActivity extends AppCompatActivity {
     @BindView(R.id.ll_after_record)
     LinearLayout ll_after_record;
 
+    Boolean isFinalized;
+
     String path;
     String returnedURI;
     String old_text = "";
@@ -113,7 +122,7 @@ public class MainActivity extends AppCompatActivity {
         //bind xml to activity
         ButterKnife.bind(this);
         Stetho.initializeWithDefaults(this);
-
+        isFinalized = false;
         rb_learn.setChecked(true);
         bt_cancel.setVisibility(View.GONE);
         bt_send.setVisibility(View.GONE);
@@ -499,6 +508,50 @@ public class MainActivity extends AppCompatActivity {
         inflater.inflate(R.menu.menu, menu);
         return true;
     }
+
+    @Override
+    public boolean onPrepareOptionsMenu (Menu menu) {
+        shouldEnablePracticeModule();
+        if (!isFinalized) {
+            menu.getItem(0).setEnabled(false);
+            // You can also use something like:
+            // menu.findItem(R.id.example_foobar).setEnabled(false);
+        } else {
+            menu.getItem(0).setEnabled(true);
+        }
+        return true;
+    }
+
+    private void shouldEnablePracticeModule() {
+        String id = getSharedPreferences(getPackageName(), Context.MODE_PRIVATE).getString(INTENT_ID,"00000000");
+        String server_ip = getSharedPreferences(this.getPackageName(), Context.MODE_PRIVATE).getString(INTENT_SERVER_ADDRESS,"10.211.17.171");
+        RequestParams params = new RequestParams();
+        params.put("id", id);
+        AsyncHttpClient client = new AsyncHttpClient();
+        client.post("http://"+server_ip +"/check_video_count.php", params, new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                Log.e("msg success", statusCode+"");
+                if (statusCode == 200) {
+                    String str = new String(responseBody, Charset.forName("UTF-8"));
+                    String cleanString = str.replaceAll("\r", "").replaceAll("\n", "");
+                    Integer count = new Integer(cleanString);
+                    if(count >= 75) {
+                        isFinalized = true;
+                    } else {
+                        isFinalized = false;
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                Log.e("msg fail", "Something went wrong");
+                isFinalized = false;
+            }
+        });
+    }
+
     public boolean onOptionsItemSelected(MenuItem item) {
 
         //respond to menu item selection

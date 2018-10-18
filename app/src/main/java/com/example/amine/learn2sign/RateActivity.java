@@ -180,7 +180,7 @@ public class RateActivity extends AppCompatActivity {
 
             @Override
             public void onProgress(long bytesWritten, long totalSize) {
-                Log.e("msg progress",bytesWritten + " out of " + totalSize);
+                Log.d("msg progress",bytesWritten + " out of " + totalSize);
 
                 super.onProgress(bytesWritten, totalSize);
             }
