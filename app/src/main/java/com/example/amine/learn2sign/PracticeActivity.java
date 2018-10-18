@@ -192,5 +192,9 @@ public class PracticeActivity extends AppCompatActivity {
                 startActivityForResult(t, 5555);
             }
         }
+        if(resultCode == 2000 && requestCode == 5555) {
+            Button newword = (Button)findViewById(R.id.practice_new_word);
+            newword.performClick();
+        }
     }
 }

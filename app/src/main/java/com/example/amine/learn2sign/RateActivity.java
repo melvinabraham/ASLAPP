@@ -64,12 +64,16 @@ public class RateActivity extends AppCompatActivity {
 
     String practice_word;
     String videoFilePath;
+    RateActivity activity;
+    Intent returnIntent;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_rate);
+        returnIntent = new Intent();
+        activity = this;
         VideoView video_view = (VideoView) findViewById(R.id.r_video_learn);
         VideoView video_record_view = (VideoView) findViewById(R.id.r_record);
         if(getIntent().hasExtra(INTENT_WORD)) {
@@ -106,14 +110,19 @@ public class RateActivity extends AppCompatActivity {
             }
         });
 
-        Button decline = (Button)findViewById(R.id.Accept_word);
-        accept.setOnClickListener(new View.OnClickListener() {
+        Button decline = (Button)findViewById(R.id.Decline_word);
+        decline.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 /*
                 This needs to be implemented. It should upload the file and then go back to practice
                 with a new word.
                 */
+                Log.d("Rate Activity", "The rate preview declined");
+//                Intent t = new Intent(RateActivity.this,PracticeActivity.class);
+                returnIntent.putExtra(INTENT_WORD, "Declined");
+                activity.setResult(2000, returnIntent);
+                activity.finish();
             }
         });
     }
