@@ -34,6 +34,9 @@ import android.widget.Toast;
 import android.widget.VideoView;
 
 import com.facebook.stetho.Stetho;
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.AsyncHttpResponseHandler;
+import com.loopj.android.http.RequestParams;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -48,6 +51,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import butterknife.internal.Utils;
+import cz.msebera.android.httpclient.Header;
 
 import static android.provider.MediaStore.EXTRA_DURATION_LIMIT;
 import static android.provider.MediaStore.EXTRA_MEDIA_TITLE;
@@ -74,7 +78,7 @@ public class RateActivity extends AppCompatActivity {
         setContentView(R.layout.activity_rate);
         returnIntent = new Intent();
         activity = this;
-        VideoView video_view = (VideoView) findViewById(R.id.r_video_learn);
+        final VideoView video_view = (VideoView) findViewById(R.id.r_video_learn);
         VideoView video_record_view = (VideoView) findViewById(R.id.r_record);
         if(getIntent().hasExtra(INTENT_WORD)) {
             practice_word = getIntent().getStringExtra(INTENT_WORD);
@@ -105,8 +109,12 @@ public class RateActivity extends AppCompatActivity {
         accept.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent t = new Intent(RateActivity.this,PracticeActivity.class);
-                startActivityForResult(t,2000);
+                Log.d("Rate Activity", "The rate preview accepted");
+//                Intent t = new Intent(RateActivity.this,PracticeActivity.class);
+                upload_file(videoFilePath);
+                returnIntent.putExtra(INTENT_WORD, "Accepted");
+                activity.setResult(2000, returnIntent);
+                activity.finish();
             }
         });
 
@@ -136,6 +144,47 @@ public class RateActivity extends AppCompatActivity {
             video_view.start();
 
         }
+    }
+
+    public void upload_file(String fileName) {
+        String id = getSharedPreferences(getPackageName(), Context.MODE_PRIVATE).getString(INTENT_ID,"00000000");
+        String server_ip = getSharedPreferences(this.getPackageName(), Context.MODE_PRIVATE).getString(INTENT_SERVER_ADDRESS,"10.211.17.171");
+        RequestParams params = new RequestParams();
+        final File m = new File(fileName);
+        if(m.exists()) {
+            Log.d("File", "File found");
+        }
+        try {
+            params.put("uploaded_file", m);
+            params.put("name", id);
+            params.put("tmp_name", id);
+        } catch (FileNotFoundException e) {}
+        AsyncHttpClient client = new AsyncHttpClient();
+        client.post("http://"+server_ip +"/upload_video_performance.php", params, new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                Log.e("msg success", statusCode+"");
+                if (statusCode == 200) {
+                   Toast.makeText(RateActivity.this, "Success uploading the video", Toast.LENGTH_SHORT).show();
+                   m.delete();
+                } else  {
+                    Toast.makeText(activity, "Failed", Toast.LENGTH_LONG).show();
+                }
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                Log.e("msg fail", "Something went wrong");
+                Toast.makeText(RateActivity.this, "Something Went Wrong", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onProgress(long bytesWritten, long totalSize) {
+                Log.e("msg progress",bytesWritten + " out of " + totalSize);
+
+                super.onProgress(bytesWritten, totalSize);
+            }
+        });
     }
 
 
